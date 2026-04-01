@@ -13,7 +13,7 @@
   .map-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
   .subtitle { font-size: 13px; color: #666; margin-bottom: 16px; }
   .tooltip {
-    position: absolute;
+    position: fixed;
     background: #fff;
     border: 0.5px solid #bbb;
     border-radius: 8px;
@@ -23,7 +23,7 @@
     pointer-events: none;
     max-width: 260px;
     line-height: 1.5;
-    z-index: 100;
+    z-index: 9999;
     display: none;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
@@ -173,8 +173,15 @@ fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
         const name = stateName.get(d.id);
         const p = policies[name] || { note: "No statewide law on file.", cat: "none" };
         tip.style.display = "block";
-        tip.style.left = (event.pageX - document.body.getBoundingClientRect().left + 12) + "px";
-        tip.style.top = (event.pageY - document.body.getBoundingClientRect().top - 10) + "px";
+        const x = event.clientX;
+        const y = event.clientY;
+        const tipW = tip.offsetWidth || 260;
+        const tipH = tip.offsetHeight || 100;
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+        // flip left if too close to right edge, flip up if too close to bottom
+        tip.style.left = (x + tipW + 16 > winW ? x - tipW - 8 : x + 12) + "px";
+        tip.style.top  = (y + tipH + 16 > winH ? y - tipH - 8 : y + 12) + "px";
         tip.innerHTML = `<strong>${name}</strong><span class="cat-label">${catLabels[p.cat]}</span>${p.note}`;
       })
       .on("mouseleave", () => { tip.style.display = "none"; });
