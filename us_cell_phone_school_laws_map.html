@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US Cell Phone Laws in School Classrooms</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #ffffff; color: #1a1a1a; padding: 1.5rem; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 16px; }
+  .tooltip {
+    position: absolute;
+    background: #fff;
+    border: 0.5px solid #bbb;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #1a1a1a;
+    pointer-events: none;
+    max-width: 260px;
+    line-height: 1.5;
+    z-index: 100;
+    display: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .tooltip strong { font-weight: 600; display: block; margin-bottom: 4px; }
+  .tooltip .cat-label { font-size: 11px; color: #666; display: block; margin-bottom: 5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 20px; padding: 10px 0 12px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #555; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+  .map-wrap { position: relative; width: 100%; }
+  svg path { cursor: pointer; transition: opacity 0.15s; }
+  svg path:hover { opacity: 0.72; }
+  .stat-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stat { background: #f5f5f3; border-radius: 8px; padding: 8px 14px; font-size: 12px; color: #666; }
+  .stat strong { font-size: 20px; font-weight: 600; color: #1a1a1a; display: block; }
+  .footer { font-size: 11px; color: #999; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Cell Phone Laws in US School Classrooms</h1>
+<p class="subtitle">State-by-state policies as of early 2026 — hover over any state for details</p>
+
+<div class="stat-row">
+  <div class="stat"><strong>32</strong>Ban / restrict classrooms</div>
+  <div class="stat"><strong>5</strong>Must adopt a policy</div>
+  <div class="stat"><strong>4</strong>Encourage limits</div>
+  <div class="stat"><strong>9</strong>No statewide law</div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#A32D2D;"></div>Bell-to-bell ban</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#E24B4A;"></div>Classroom / instructional ban</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#63991A;"></div>Must adopt local policy</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#9FE1CB;"></div>Encourages limits</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#D3D1C7;"></div>No statewide law</div>
+</div>
+
+<div class="map-wrap">
+  <div class="tooltip" id="tip"></div>
+  <svg id="map" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+</div>
+
+<p class="footer">Sources: Ballotpedia, ExcelinEd, Campus Safety Magazine, NBC News, NAGB. Data as of March 2026.</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const policies = {
+  "Alabama": { cat: "classroom", note: "HB 166 (2025): districts must ban phones during instructional time with reasonable exceptions." },
+  "Alaska": { cat: "must-adopt", note: "State requires districts to adopt a cellphone policy, but does not specify restrictions." },
+  "Arizona": { cat: "classroom", note: "Law restricts phone use during instructional time; districts set specific rules." },
+  "Arkansas": { cat: "bell-to-bell", note: "2025 law: each district must adopt a bell-to-bell policy before the 2025-26 school year." },
+  "California": { cat: "classroom", note: "Phone-Free Schools Act (2024): districts must limit smartphone use during school hours by July 2026." },
+  "Colorado": { cat: "must-adopt", note: "HB 25-1135: school districts must create and publicly post device policies by July 1, 2026." },
+  "Connecticut": { cat: "encourage", note: "CT Dept. of Education recommends districts restrict phone use; no mandate." },
+  "Delaware": { cat: "none", note: "No statewide law. Individual districts may have their own policies." },
+  "Florida": { cat: "bell-to-bell", note: "First state to act (2023). HB 1105 (2025) expands to bell-to-bell for K-8 and a high school pilot." },
+  "Georgia": { cat: "classroom", note: "Distraction Free Education Act (HB 340, 2025): bans phones during school day for K-8 students." },
+  "Hawaii": { cat: "classroom", note: "State DOE policy (Feb 2026): no phones for elem/middle students all day; HS banned during instructional time." },
+  "Idaho": { cat: "encourage", note: "Gov. Brad Little issued an executive order encouraging districts to limit phones in schools." },
+  "Illinois": { cat: "none", note: "No statewide law yet." },
+  "Indiana": { cat: "classroom", note: "Law restricts student phone use during instructional time statewide." },
+  "Iowa": { cat: "classroom", note: "Statewide policy limits phone use during instructional time." },
+  "Kansas": { cat: "encourage", note: "KS Dept. of Education adopted policies encouraging districts to limit phone use." },
+  "Kentucky": { cat: "classroom", note: "Phones banned during instructional time starting 2025-26 school year." },
+  "Louisiana": { cat: "bell-to-bell", note: "SB 207: no student may possess a phone on their person throughout the instructional day." },
+  "Maine": { cat: "must-adopt", note: "State requires districts to adopt a phone policy without specifying content." },
+  "Maryland": { cat: "none", note: "No statewide law. Some districts have local policies." },
+  "Massachusetts": { cat: "none", note: "No statewide law. STUDY Act was proposed but not yet enacted." },
+  "Michigan": { cat: "classroom", note: "HB 4141 signed Feb 10, 2026: prohibits phone use during class; takes effect 2026-27 school year." },
+  "Minnesota": { cat: "must-adopt", note: "State requires districts to adopt a cellphone policy without specifying content." },
+  "Mississippi": { cat: "none", note: "No statewide law." },
+  "Missouri": { cat: "classroom", note: "SB 68 (2025): districts must restrict phones during instructional time." },
+  "Montana": { cat: "none", note: "No statewide law." },
+  "Nebraska": { cat: "classroom", note: "Statewide policy limits phone use during instructional time." },
+  "Nevada": { cat: "classroom", note: "Statewide law restricts phone use during instructional time." },
+  "New Hampshire": { cat: "classroom", note: "HB 2 (2025): restricts phone use in classrooms statewide." },
+  "New Jersey": { cat: "classroom", note: "S3695 signed Jan 8, 2026: NJ Dept. of Education must develop policies prohibiting phone use during the school day." },
+  "New Mexico": { cat: "must-adopt", note: "State requires districts to adopt a phone policy without mandating specific restrictions." },
+  "New York": { cat: "bell-to-bell", note: "FY 2026 budget provision: bell-to-bell smartphone ban for all K-12 schools, effective 2025-26 school year." },
+  "North Carolina": { cat: "classroom", note: "HB 959: districts must ensure phone-free classrooms and adopt internet safety curricula." },
+  "North Dakota": { cat: "bell-to-bell", note: "HB 1160: bell-to-bell policies required; phones must be securely stowed." },
+  "Ohio": { cat: "classroom", note: "HB 250 (2025): districts must create policies emphasizing phone use be as limited as possible." },
+  "Oklahoma": { cat: "bell-to-bell", note: "SB 139: school-wide ban on personal electronic devices all day." },
+  "Oregon": { cat: "bell-to-bell", note: "Executive order by Gov. Kotek (July 2025) banning cellphones during school hours." },
+  "Pennsylvania": { cat: "none", note: "No statewide law." },
+  "Rhode Island": { cat: "classroom", note: "Statewide policy restricts phone use during instructional time." },
+  "South Carolina": { cat: "bell-to-bell", note: "2024-25 budget proviso: schools must ban personal devices during the school day to receive state funding." },
+  "South Dakota": { cat: "none", note: "No statewide law." },
+  "Tennessee": { cat: "classroom", note: "Statewide law restricts phone use during instructional time." },
+  "Texas": { cat: "classroom", note: "Statewide policy limits phone use during instructional time." },
+  "Utah": { cat: "classroom", note: "SB 178 (Apr 2025): districts must ban phones during instructional time; exemptions allowed." },
+  "Vermont": { cat: "classroom", note: "Law enacted July 2025 banning cellphones in classrooms." },
+  "Virginia": { cat: "classroom", note: "Executive Order 33 (Gov. Youngkin, 2024) and subsequent legislation restrict classroom phone use." },
+  "Washington": { cat: "encourage", note: "WA Dept. of Education adopted policy encouraging districts to limit phone use; no mandate." },
+  "West Virginia": { cat: "classroom", note: "Statewide law restricts phone use during instructional time." },
+  "Wisconsin": { cat: "classroom", note: "AB 2 signed Oct 2025: districts must ban phones and other devices during class time." },
+  "Wyoming": { cat: "none", note: "Senate rejected a phone policy bill in Jan 2025. No statewide law." }
+};
+
+const colorMap = {
+  "bell-to-bell": "#A32D2D",
+  "classroom": "#E24B4A",
+  "must-adopt": "#63991A",
+  "encourage": "#9FE1CB",
+  "none": "#D3D1C7"
+};
+
+const catLabels = {
+  "bell-to-bell": "Bell-to-bell ban",
+  "classroom": "Classroom / instructional ban",
+  "must-adopt": "Must adopt local policy",
+  "encourage": "Encourages limits",
+  "none": "No statewide law"
+};
+
+const svg = d3.select("#map");
+const tip = document.getElementById("tip");
+const projection = d3.geoAlbersUsa().scale(1280).translate([480, 300]);
+const path = d3.geoPath().projection(projection);
+
+fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
+  .then(r => r.json())
+  .then(us => {
+    const stateFeatures = topojson.feature(us, us.objects.states).features;
+    const stateName = new Map();
+    us.objects.states.geometries.forEach(g => stateName.set(g.id, g.properties.name));
+
+    svg.selectAll("path.state")
+      .data(stateFeatures)
+      .join("path")
+      .attr("class", "state")
+      .attr("d", path)
+      .attr("fill", d => {
+        const name = stateName.get(d.id);
+        const p = policies[name];
+        return p ? colorMap[p.cat] : colorMap["none"];
+      })
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 0.8)
+      .on("mousemove", function(event, d) {
+        const name = stateName.get(d.id);
+        const p = policies[name] || { note: "No statewide law on file.", cat: "none" };
+        tip.style.display = "block";
+        tip.style.left = (event.pageX - document.body.getBoundingClientRect().left + 12) + "px";
+        tip.style.top = (event.pageY - document.body.getBoundingClientRect().top - 10) + "px";
+        tip.innerHTML = `<strong>${name}</strong><span class="cat-label">${catLabels[p.cat]}</span>${p.note}`;
+      })
+      .on("mouseleave", () => { tip.style.display = "none"; });
+
+    svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+      .attr("fill", "none")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 0.5)
+      .attr("d", path);
+  });
+</script>
+</body>
+</html>
